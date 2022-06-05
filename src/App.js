@@ -78,7 +78,7 @@ function App() {
             </div>
             <span className="output">
               <h3>Distance</h3>
-              <h2 className="calc-distance">1,427 kms</h2>
+              <h2 className="calc-distance">{output} kms</h2>
             </span>
             {output > 0 && (
               <h4 className="output-text">
