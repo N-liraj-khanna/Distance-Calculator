@@ -3,14 +3,17 @@ import "./App.css";
 import logo from "./Img/logo.png";
 import loc from "./Img/loc.png";
 import { GoogleMap, DistanceMatrixService } from "@react-google-maps/api";
+import SearchLocationInput from "./SearchLocationInput.js";
 
 function App() {
+  // States
   const [origin, setOrigin] = useState("");
   const [dest, setDest] = useState("");
   const [output, setOutput] = useState(0);
 
+  // Map Inputs
   const options = {
-    destinations: [{ lat: 19.0760, lng: 72.8777 }],
+    destinations: [{ lat: 19.076, lng: 72.8777 }],
     origins: [{ lng: 28.7041, lat: 77.1025 }],
     travelMode: "DRIVING",
   };
@@ -25,17 +28,52 @@ function App() {
     lng: 78.9629,
   };
 
-  const originHandler = (e) => {
-    setOrigin(e.target.value);
-    console.log(origin);
-  };
-  const destHandler = (e) => {
-    setDest(e.target.value);
-    console.log(dest);
-  };
+  // Handlers
   const calculateHandler = (e) => {
     setOutput(5);
   };
+
+  // Autocomplete code
+  let autoComplete;
+
+  const loadScript = (url, callback) => {
+    let script = document.createElement("script");
+    script.type = "text/javascript";
+
+    if (script.readyState) {
+      script.onreadystatechange = function () {
+        if (
+          script.readyState === "loaded" ||
+          script.readyState === "complete"
+        ) {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else {
+      script.onload = () => callback();
+    }
+
+    script.src = url;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  };
+
+  function handleScriptLoad(updateQuery, autoCompleteRef) {
+    autoComplete = new window.google.maps.places.Autocomplete(
+      autoCompleteRef.current,
+      { types: ["(cities)"], componentRestrictions: { country: "us" } }
+    );
+    autoComplete.setFields(["address_components", "formatted_address"]);
+    autoComplete.addListener("place_changed", () =>
+      handlePlaceSelect(updateQuery)
+    );
+  }
+  async function handlePlaceSelect(updateQuery) {
+    const addressObject = autoComplete.getPlace();
+    const query = addressObject.formatted_address;
+    updateQuery(query);
+    console.log(addressObject);
+  }
 
   return (
     <div className="App">
@@ -52,12 +90,12 @@ function App() {
             <h6>Origin</h6>
             <div className="input-logo">
               <img className="loc" src={loc} alt="loc" />
-              <input
-                type="text"
-                className="origin-input"
+              <SearchLocationInput
+                loadScript={loadScript}
+                handleScriptLoad={handleScriptLoad}
+                set={setOrigin}
                 placeholder="Origin"
-                value={origin}
-                onChange={originHandler}
+                className="origin-input"
               />
             </div>
             <div className="button">
@@ -68,12 +106,12 @@ function App() {
             <h6>Destination</h6>
             <div className="input-logo">
               <img className="loc" src={loc} alt="loc" />
-              <input
-                type="text"
-                className="dest-input"
+              <SearchLocationInput
+                loadScript={loadScript}
+                handleScriptLoad={handleScriptLoad}
+                set={setDest}
                 placeholder="Destination"
-                value={dest}
-                onChange={destHandler}
+                className="dest-input"
               />
             </div>
             <span className="output">
@@ -95,12 +133,28 @@ function App() {
               zoom={4}
               center={center}
               options={options}
-            ></GoogleMap>
+            >
+              <DistanceMatrixService
+                options={{
+                  destinations: [{ lat: 1.296788, lng: 103.778961 }],
+                  origins: [{ lng: 72.89216, lat: 19.12092 }],
+                  travelMode: "DRIVING",
+                }}
+                callback={(res) => {
+                  console.log("RESPONSE", res);
+                }}
+              />
+            </GoogleMap>
           </div>
         </div>
       </div>
 
-      <div className="map-container"></div>
+      <div className="check">
+        <SearchLocationInput
+          loadScript={loadScript}
+          handleScriptLoad={handleScriptLoad}
+        />
+      </div>
     </div>
   );
 }
